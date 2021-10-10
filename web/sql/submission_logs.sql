@@ -25,20 +25,17 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `aspect_submission_logs`
+-- Table structure for table `submission_logs`
 --
 
-CREATE TABLE `aspect_submission_logs` (
+CREATE TABLE `submission_logs` (
   `UploadKey` varchar(11) DEFAULT NULL,
   `GroupName` varchar(20) DEFAULT NULL,
   `filename` varchar(255) DEFAULT NULL,
   `mime` varchar(50) DEFAULT NULL,
   `size` bigint(20) UNSIGNED DEFAULT NULL,
   `updated` datetime DEFAULT NULL,
-  `data` longblob NOT NULL,
-  `Precision` double(5,2) NOT NULL,
-  `Recall` double(5,2) NOT NULL,
-  `F1Score` double(5,2) NOT NULL
+  `data` longblob NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 COMMIT;
 

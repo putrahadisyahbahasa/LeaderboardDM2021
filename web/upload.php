@@ -1,26 +1,21 @@
 <?php
 
 require_once __DIR__ . '/vendor/autoload.php';
-use Phpml\Metric\ClassificationReport;
-use Phpml\Metric\Accuracy;
 
-if ( isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
-	if ( isset($_FILES["file"])) {
+if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
+	if (isset($_FILES["file"])) {
 		//if there was an error uploading the file
 		if ($_FILES["file"]["error"] > 0) {
 			echo "Return Code: " . $_FILES["file"]["error"] . "<br />";
 		} else {
 			// get uploadKey
 			$uploadKey = $_POST["uploadkey"];
-
-			// upload type
-			$type = $_GET['type'];
 			
 			// db definition
-			$host = 's3lkt7lynu0uthj8.cbetxkdyhwsb.us-east-1.rds.amazonaws.com';
-			$username = 'uhtbugxx9ty6dufh';
-			$password = 'wtqo9g6jixlfm7ov';
-			$dbname = 'clgr9wl4akcxw07o';
+			$host = 'kfgk8u2ogtoylkq9.cbetxkdyhwsb.us-east-1.rds.amazonaws.com';
+			$username = 'n0ww3uyqs0rp7f3z';
+			$password = 'khb8zr794pyztrw2';
+			$dbname = 'xepi4sk6to5jhqc4';
 
 			// Create connection
 			$conn = new mysqli($host, $username, $password, $dbname);
@@ -31,20 +26,16 @@ if ( isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 			}
 			
 			//get groupname for giving filename
-			$table = $type . '_result';
-			$getdata = "SELECT GroupName from $table where UploadKey = $uploadKey";
+			$getdata = "SELECT GroupName FROM aspect_result WHERE UploadKey = $uploadKey";
 			$result_get = $conn->query($getdata);
 			$namagrup = '';
 			if ($result_get) {
-			
-				while($row = $result_get->fetch_assoc())
-				{
+				while($row = $result_get->fetch_assoc()) {
 					$namagrup = $row['GroupName'];
 				}
-				
 			}
 
-			//Print file details
+			// print file details
 			$file = $namagrup."-".$_FILES['file']['name'];
 			$file_loc = $_FILES['file']['tmp_name'];
 			$folder="uploads/";
@@ -59,150 +50,144 @@ if ( isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 			echo "Size: " . ($size / 1024) . " KB<br />";
 			
 			$fp = fopen($data, 'r');
-			$y_pred = array();
+			$y_pred_food = array();
+			$y_pred_ambience = array();
+			$y_pred_service = array();
+			$y_pred_price = array();
+
 			$i = 0;
 			
-			$content = []; //variable content to store the value of uploaded docs
-			while (($read_line = fgetcsv($fp,1000,",")) != false) {
-				$id_pred[$i] = $read_line[0];
-				$y_pred[$i] = $read_line[1];	
-				$gabungan[$i] = $id_pred[$i] . "," . $y_pred[$i];
+			$content = []; // variable content to store the value of uploaded docs
+			while (($read_line = fgetcsv($fp, 1000, ",")) != false) {
+				if ($i >= 7000 and $i <= 7199) {
+					array_push($y_pred_food, $read_line[1]);
+					array_push($y_pred_ambience, $read_line[2]);
+					array_push($y_pred_service, $read_line[3]);
+					array_push($y_pred_price, $read_line[4]);
+				}
+				$gabungan[$i] = $read_line[0] . "," . $read_line[1] . "," . $read_line[2] . "," . $read_line[3] . "," . $read_line[4];
 				array_push($content, $gabungan[$i]);
-				
 				$i++;
 			}
-			
 			fclose($fp);
 			
-			//load gold standard data
-			$file_gold = 'temp_x2z/' . $type . '_gold_standar.csv';
+			// load gold standard data
+			$file_gold = 'temp_x2z/df_gold.csv';
 			$fp = fopen($file_gold, 'r');
-			$y_gold = array();
+			$y_gold_food = array();
+			$y_gold_ambience = array();
+			$y_gold_service = array();
+			$y_gold_price = array();
 			$i = 0;
-			$classes = array();
-			while (($line = fgetcsv($fp,1000,",")) != false) {
-				$id_gold[$i] = $line[0];
-				$y_gold[$i] = $line[1];
-				if (!in_array($line[1], $classes) and $line[1] != '-') {
-					array_push($classes, $line[1]);
-				}	
+			while (($line = fgetcsv($fp, 1000, ",")) != false) {
+				$y_gold_food[$i] = $line[1];
+				$y_gold_ambience[$i] = $line[2];
+				$y_gold_service[$i] = $line[3];
+				$y_gold_price[$i] = $line[4];
+
 				$i++;
 			}
 			fclose($fp);
 
-			$con_matrix = array();
-			for ($i = 0; $i < count($classes); $i++) {
-				$con_matrix[$i] = array();
-				for ($j = 0; $j < count($classes); $j++) {
-					$con_matrix[$i][$j] = 0;
-				}
-			}
-
-			// modified
+			// aspect only
+			$tp_aspect = 0;
+			$tn_aspect = 0;
+			$fp_aspect = 0;
+			$fn_aspect = 0;
 			$i = 0;
-			$y_gold_clean = array();
-			$y_pred_clean = array();
-			while (($i < count($y_gold)) and ($i < count($y_pred))) {
-				if (($y_gold[$i]) != '-') {
-					 $con_matrix[array_search($y_gold[$i], $classes)][array_search($y_pred[$i], $classes)] += 1;
-					 array_push($y_gold_clean, $y_gold[$i]);
-					 array_push($y_pred_clean, $y_pred[$i]);
-				}
-				$i++;
-			}
-
-			echo "<br>";
-			echo "Confusion Matrix:<br>";
-			echo "<table width=\"1000\">";
-			echo "<tr bgcolor=\"peachpuff\">";
-			echo "<td></td>";
-			foreach ($classes as $class) {
-				echo "<td><strong>Prediction $class</strong></td>";
-			}
-			echo "</tr>";
-			for ($i = 0; $i < count($classes); $i++) {
-				echo "<tr bgcolor=\"peachpuff\">";
-				for ($j = 0; $j < count($classes); $j++) {
-					if ($j == 0) {
-						$class = $classes[$i];
-						echo "<td><strong>Actual $class</strong></td>";
+			while (($i < count($y_gold_food))) {
+				// check food
+				if (($y_gold_food[$i] == $y_pred_food[$i])) {
+					if ($y_gold_food[$i] != '-') {
+						$tp_aspect++;
+					} else {
+						$tn_aspect++;
 					}
-					echo "<td>".$con_matrix[$i][$j]."</td>";
+				} else {
+					if ($y_gold_food[$i] != '-') {
+						$fn_aspect++;
+					} else {
+						$fp_aspect++;
+					}
 				}
-				echo "</tr>";
+
+				// check ambience
+				if (($y_gold_ambience[$i] == $y_pred_ambience[$i])) {
+					if ($y_gold_ambience[$i] != '-') {
+						$tp_aspect++;
+					} else {
+						$tn_aspect++;
+					}
+				} else {
+					if ($y_gold_ambience[$i] != '-') {
+						$fn_aspect++;
+					} else {
+						$fp_aspect++;
+					}
+				}
+
+				// check service
+				if (($y_gold_service[$i] == $y_pred_service[$i])) {
+					if ($y_gold_service[$i] != '-') {
+						$tp++;
+					} else {
+						$tn++;
+					}
+				} else {
+					if ($y_gold_service[$i] != '-') {
+						$fn_aspect++;
+					} else {
+						$fp_aspect++;
+					}
+				}
+
+				// check price
+				if (($y_gold_price[$i] == $y_pred_price[$i])) {
+					if ($y_gold_price[$i] != '-') {
+						$tp_aspect++;
+					} else {
+						$tn_aspect++;
+					}
+				} else {
+					if ($y_gold_price[$i] != '-') {
+						$fn_aspect++;
+					} else {
+						$fp_aspect++;
+					}
+				}
 			}
-			echo "</table>";
-
-			$accuracy = Accuracy::score($y_gold_clean, $y_pred_clean)*100;
-
-			// macro
-			$report_macro = new ClassificationReport($y_gold_clean, $y_pred_clean, 2);
-			$average_macro = $report_macro->getAverage();
-			$precision_macro = $average_macro['precision']*100;
-			$recall_macro = $average_macro['recall']*100;
-			$f1_score_macro = $average_macro['f1score']*100;
-
-			$arr_precision = $report_macro->getPrecision();
-			$arr_recall = $report_macro->getRecall();
-			$arr_f1score = $report_macro->getF1Score();
-			$arr_support = $report_macro->getSupport();
-
-			// micro
-			$report_micro = new ClassificationReport($y_gold_clean, $y_pred_clean, 1);
-			$average_micro = $report_micro->getAverage();
-			$precision_micro = $average_micro['precision']*100;
-			$recall_micro = $average_micro['recall']*100;
-			$f1_score_micro = $average_micro['f1score']*100;
-
-			// weighted
-			$report_weighted = new ClassificationReport($y_gold_clean, $y_pred_clean, 3);
-			$average_weighted = $report_weighted->getAverage();
-			$precision_weighted = $average_weighted['precision']*100;
-			$recall_weighted = $average_weighted['recall']*100;
-			$f1_score_weighted = $average_weighted['f1score']*100;
 			
+			if (($tp_aspect + $fp_aspect) != 0) {
+				$precision_aspect = ($tp_aspect/($tp_aspect + $fp_aspect))*100;
+			} else {
+				$precision_aspect = 0;	
+			}
+				
+			if (($tp_aspect + $fn_aspect) != 0) {
+				$recall_aspect = ($tp_aspect/($tp_aspect + $fn_aspect))*100;
+			} else {
+				$recall_aspect = 0;	
+			}
+
+			if (($recall_aspect != 0) and ($precision_aspect != 0)) {
+				$f1_score_aspect = 2/((1/$recall_aspect) + (1/$precision_aspect));
+			} else {
+				$f1_score_aspect = 0;
+			}
+
 			// update info di basis data
-			$table = $type . '_result';
-			$sql = "UPDATE $table SET `complete set accuracy` = $accuracy, `complete set precision` = $precision_macro, `complete set recall` = $recall_macro, `complete set f1-score` = $f1_score_macro WHERE Uploadkey='$uploadKey'";
+			$table = 'aspect_result';
+			$sql = "UPDATE $table SET `precision` = $precision_aspect, `recall` = $recall_aspect, `f1score` = $f1_score_aspect WHERE Uploadkey='$uploadKey'";
 
 			if ($conn->query($sql) == TRUE) {
 				//echo "Record updated successfully";
 			} else {
 				die("Error updating record: " . $conn->error);
 			}
-			
-			echo "<br><strong>Accuracy</strong>: " . $accuracy . "<br>";
-			
-			echo "<br><strong>Precision for Each Class</strong>:<br>";
-			print_r($arr_precision);
-			echo "<br>";
-			echo "<strong>Recall for Each Class</strong>:<br>";
-			print_r($arr_recall);
-			echo "<br>";
-			echo "<strong>F1-score for Each Class</strong>:<br>";
-			print_r($arr_f1score);
-			echo "<br>";
-			echo "<strong>Support for Each Class</strong>:<br>";
-			print_r($arr_support);
-			echo "<br>";
 
-			//macro
-			echo "<br><strong>Macro-average</strong><br>";
-			echo ">>>>Precision: " . $precision_macro . "<br>";
-			echo ">>>>Recall: " . $recall_macro . "<br>";
-			echo ">>>>F1-score: " . $f1_score_macro . "<br>";
-
-			//micro
-			echo "<br><strong>Micro-average</strong><br>";
-			echo ">>>>Precision: " . $precision_micro . "<br>";
-			echo ">>>>Recall: " . $recall_micro . "<br>";
-			echo ">>>>F1-score: " . $f1_score_micro . "<br>";
-
-			//weighted
-			echo "<br><strong>Weighted-average</strong><br>";
-			echo ">>>>Precision: " . $precision_weighted . "<br>";
-			echo ">>>>Recall: " . $recall_weighted . "<br>";
-			echo ">>>>F1-score: " . $f1_score_weighted . "<br>";
+			echo "<strong>Precision</strong>: " . $precision_aspect . "<br>";
+			echo "<strong>Recall</strong>: " . $recall_aspect . "<br>";
+			echo "<strong>F1-score</strong>: " . $f1_score_aspect;
 
 			echo "<br>*jika terjadi error terkait 'mysql', coba unggah sekali lagi.";
 			echo "<br><br><a href='index.php'>See Current Rankings</a><br>";
@@ -219,9 +204,8 @@ if ( isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 			
 				// update table submission untuk simpan filename yang disubmit oleh grup
 				$sekarang = date("Y-m-d H:i:s");
-				$table = $type . '_submission_logs';
-				$sql = "INSERT INTO $table(UploadKey, GroupName, filename, mime, size, updated, data, Accuracy, Precision_C, Recall, F1Score) VALUES 
-						('$uploadKey', '$namagrup', '$name', '$mime', '$size', '$sekarang','$string_input', '$accuracy', '$precision_macro', '$recall_macro', '$f1_score_macro')";
+				$sql = "INSERT INTO aspect_submission_logs(UploadKey, GroupName, filename, mime, size, updated, data) VALUES 
+						('$uploadKey', '$namagrup', '$name', '$mime', '$size', '$sekarang', '$string_input')";
 
 				if ($conn->query($sql) == TRUE) {
 					// echo "Submission saved successfully";

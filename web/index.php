@@ -14,15 +14,15 @@ if ($conn->connect_error) {
 }
 
 // get the data
-$sql = "select * from aspect_result order by `f1score` desc, `precision` desc, `recall` desc";
+$sql = "SELECT * FROM aspect_result ORDER BY `F1Score` DESC, `Precision` DESC, `Recall` DESC";
 $result_aspect = $conn->query($sql);
 
-$sql = "select * from aspect_sentiment_result order by `f1score` desc, `precision` desc, `recall` desc";
+$sql = "SELECT * FROM aspect_sentiment_result ORDER BY `F1Score` DESC, `Precision` DESC, `Recall` DESC";
 $result_aspect_sentiment = $conn->query($sql);
 ?>
 
 <center>
-<h2>Tugas Kelompok #1 Penambangan Data</h2>
+<h2>Tugas Kelompok 1 Penambangan Data</h2>
 <h3>Aspect-Based Restaurant Review Sentiment Analysis</h3>
 <p>Submission dibuka sampai Minggu, 7 November 2021, pukul 22.00 WIB</p>
 <hr>
@@ -76,7 +76,7 @@ $result_aspect_sentiment = $conn->query($sql);
 
 <br>
 Submit your test result here: <br>
-(*upload file berekstensi csv dengan delimiter koma berisi id dan hasil prediksi <strong>tanpa header</strong>)
+(*upload file berekstensi csv dengan delimiter koma berisi id dan hasil prediksi (urutan: food, ambience, service, price) <strong>tanpa header</strong>)
 <table width="1000">
 	<form action="upload.php" method="post" enctype="multipart/form-data">
 		<tr>

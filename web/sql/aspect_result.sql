@@ -48,7 +48,10 @@ INSERT INTO `aspect_result` (`ID`, `Uploadkey`, `Groupname`, `Precision`, `Recal
 (4, '45843', 'Kelompok 4', 0.00, 0.00, 0.00),
 (5, '95659', 'Kelompok 5', 0.00, 0.00, 0.00),
 (6, '74650', 'Kelompok 6', 0.00, 0.00, 0.00),
-(7, '32632', 'Kelompok 7', 0.00, 0.00, 0.00);
+(7, '32632', 'Kelompok 7', 0.00, 0.00, 0.00),
+(8, '13245', 'Kelompok 8', 0.00, 0.00, 0.00),
+(9, '70261', 'Kelompok 9', 0.00, 0.00, 0.00),
+(10, '74060', 'Kelompok 10', 0.00, 0.00, 0.00);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

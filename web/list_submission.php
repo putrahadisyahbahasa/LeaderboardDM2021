@@ -1,9 +1,9 @@
 <?php
 
-$host = 's3lkt7lynu0uthj8.cbetxkdyhwsb.us-east-1.rds.amazonaws.com';
-$username = 'uhtbugxx9ty6dufh';
-$password = 'wtqo9g6jixlfm7ov';
-$dbname = 'clgr9wl4akcxw07o';
+$host = 'kfgk8u2ogtoylkq9.cbetxkdyhwsb.us-east-1.rds.amazonaws.com';
+$username = 'n0ww3uyqs0rp7f3z';
+$password = 'khb8zr794pyztrw2';
+$dbname = 'xepi4sk6to5jhqc4';
 
 // Connect to the database
 $dbLink = new mysqli($host, $username, $password, $dbname);
@@ -12,9 +12,7 @@ if(mysqli_connect_errno()) {
 }
  
 // Query for a list of all existing files
-$type = $_GET['type'];
-$table = $type . '_submission_logs';
-$sql = "SELECT GroupName, UploadKey, filename, mime, size, data, updated, Accuracy, Precision_C, Recall, F1Score FROM $table ORDER BY GroupName, updated DESC";
+$sql = "SELECT GroupName, UploadKey, filename, mime, size, data, updated FROM submission_logs ORDER BY GroupName, updated DESC";
 $result = $dbLink->query($sql);
  
 // Check if it was successfull
@@ -32,10 +30,6 @@ if($result) {
                     <td><b>Mime</b></td>
                     <td><b>Size (bytes)</b></td>
                     <td><b>Created</b></td>
-					<td><b>Accuracy<b></td>
-					<td><b>Precision<b></td>
-					<td><b>Recall<b></td>
-                    <td><b>F1-Score</b></td>
                 </tr>';
  
         // Print each file
@@ -49,10 +43,6 @@ if($result) {
                     <td>{$row['mime']}</td>
                     <td>{$row['size']}</td>
                     <td>{$row['updated']}</td>
-					<td>{$row['Accuracy']}</td>
-					<td>{$row['Precision_C']}</td>
-					<td>{$row['Recall']}</td>
-					<td>{$row['F1Score']}</td>
 					<td>
 					<a href='download.php?type=$type&id=$groupName&updated=$waktu'>
 					Download
