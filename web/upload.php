@@ -25,20 +25,17 @@ if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 				die("Connection failed: " . $conn->connect_error);
 			}
 			
-			//get groupname for giving filename
-			$getdata = "SELECT GroupName FROM aspect_result WHERE UploadKey = $uploadKey";
+			// get groupname for giving filename
+			$getdata = "SELECT Groupname FROM aspect_result WHERE Uploadkey = $uploadKey";
 			$result_get = $conn->query($getdata);
 			$namagrup = '';
 			if ($result_get) {
 				while($row = $result_get->fetch_assoc()) {
-					$namagrup = $row['GroupName'];
+					$namagrup = $row['Groupname'];
 				}
 			}
 
 			// print file details
-			$file = $namagrup."-".$_FILES['file']['name'];
-			$file_loc = $_FILES['file']['tmp_name'];
-			$folder="uploads/";
 			$name = $_FILES['file']['name'];
 			$mime = $_FILES['file']['type'];
 			$data = $_FILES['file']['tmp_name'];
@@ -54,18 +51,23 @@ if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 			$y_pred_ambience = array();
 			$y_pred_service = array();
 			$y_pred_price = array();
-
+			$y_pred_pairs = array();
 			$i = 0;
-			
 			$content = []; // variable content to store the value of uploaded docs
-			while (($read_line = fgetcsv($fp, 1000, ",")) != false) {
-				if ($i >= 7000 and $i <= 7199) {
-					array_push($y_pred_food, $read_line[1]);
-					array_push($y_pred_ambience, $read_line[2]);
-					array_push($y_pred_service, $read_line[3]);
-					array_push($y_pred_price, $read_line[4]);
+			while (($line = fgetcsv($fp, 1000, ",")) != false) {
+				if ($line[0] >= 7000 and $line[0] <= 7199) {
+					array_push($y_pred_food, $line[1]);
+					array_push($y_pred_ambience, $line[2]);
+					array_push($y_pred_service, $line[3]);
+					array_push($y_pred_price, $line[4]);
+					
+					$pair_food = "FOOD" . $line[1];
+					$pair_ambience = "AMBIENCE" . $line[2];
+					$pair_service = "SERVICE" . $line[3];
+					$pair_price = "PRICE" . $line[4];
+					array_push($y_pred_pairs, array($pair_food, $pair_ambience, $pair_service, $pair_price));
 				}
-				$gabungan[$i] = $read_line[0] . "," . $read_line[1] . "," . $read_line[2] . "," . $read_line[3] . "," . $read_line[4];
+				$gabungan[$i] = $line[0] . "," . $line[1] . "," . $line[2] . "," . $line[3] . "," . $line[4];
 				array_push($content, $gabungan[$i]);
 				$i++;
 			}
@@ -78,6 +80,7 @@ if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 			$y_gold_ambience = array();
 			$y_gold_service = array();
 			$y_gold_price = array();
+			$y_gold_pairs = array();
 			$i = 0;
 			while (($line = fgetcsv($fp, 1000, ",")) != false) {
 				$y_gold_food[$i] = $line[1];
@@ -85,6 +88,11 @@ if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 				$y_gold_service[$i] = $line[3];
 				$y_gold_price[$i] = $line[4];
 
+				$pair_food = "FOOD" . $line[1];
+				$pair_ambience = "AMBIENCE" . $line[2];
+				$pair_service = "SERVICE" . $line[3];
+				$pair_price = "PRICE" . $line[4];
+				array_push($y_gold_pairs, array($pair_food, $pair_ambience, $pair_service, $pair_price));
 				$i++;
 			}
 			fclose($fp);
@@ -100,8 +108,6 @@ if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 				if (($y_gold_food[$i] == $y_pred_food[$i])) {
 					if ($y_gold_food[$i] != '-') {
 						$tp_aspect++;
-					} else {
-						$tn_aspect++;
 					}
 				} else {
 					if ($y_gold_food[$i] != '-') {
@@ -115,8 +121,6 @@ if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 				if (($y_gold_ambience[$i] == $y_pred_ambience[$i])) {
 					if ($y_gold_ambience[$i] != '-') {
 						$tp_aspect++;
-					} else {
-						$tn_aspect++;
 					}
 				} else {
 					if ($y_gold_ambience[$i] != '-') {
@@ -129,9 +133,7 @@ if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 				// check service
 				if (($y_gold_service[$i] == $y_pred_service[$i])) {
 					if ($y_gold_service[$i] != '-') {
-						$tp++;
-					} else {
-						$tn++;
+						$tp_aspect++;
 					}
 				} else {
 					if ($y_gold_service[$i] != '-') {
@@ -145,8 +147,6 @@ if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 				if (($y_gold_price[$i] == $y_pred_price[$i])) {
 					if ($y_gold_price[$i] != '-') {
 						$tp_aspect++;
-					} else {
-						$tn_aspect++;
 					}
 				} else {
 					if ($y_gold_price[$i] != '-') {
@@ -155,6 +155,7 @@ if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 						$fp_aspect++;
 					}
 				}
+				$i++;
 			}
 			
 			if (($tp_aspect + $fp_aspect) != 0) {
@@ -175,44 +176,71 @@ if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 				$f1_score_aspect = 0;
 			}
 
-			// update info di basis data
-			$table = 'aspect_result';
-			$sql = "UPDATE $table SET `precision` = $precision_aspect, `recall` = $recall_aspect, `f1score` = $f1_score_aspect WHERE Uploadkey='$uploadKey'";
+			// aspect-sentiment pairs
+			$tp_aspect_sentiment = 0;
+			$fp_aspect_sentiment = 0;
+			$fn_aspect_sentiment = 0;
+			$i = 0;
+			while ($i < count($y_gold_pairs)) {
+				$tp_aspect_sentiment = $tp_aspect_sentiment + count(array_intersect($y_gold_pairs[$i], $y_pred_pairs[$i]));
+				$fp_aspect_sentiment = $fp_aspect_sentiment + count(array_diff($y_pred_pairs[$i], $y_gold_pairs[$i]));
+				$fn_aspect_sentiment = $fn_aspect_sentiment + count(array_diff($y_gold_pairs[$i], $y_pred_pairs[$i]));
+				$i++;
+			}
 
-			if ($conn->query($sql) == TRUE) {
-				//echo "Record updated successfully";
+			if (($tp_aspect_sentiment + $fp_aspect_sentiment) != 0) {
+				$precision_aspect_sentiment = ($tp_aspect_sentiment/($tp_aspect_sentiment + $fp_aspect_sentiment))*100;
 			} else {
+				$precision_aspect_sentiment = 0;	
+			}
+				
+			if (($tp_aspect_sentiment + $fn_aspect_sentiment) != 0) {
+				$recall_aspect_sentiment = ($tp_aspect_sentiment/($tp_aspect_sentiment + $fn_aspect_sentiment))*100;
+			} else {
+				$recall_aspect_sentiment = 0;	
+			}
+
+			if (($recall_aspect_sentiment != 0) and ($precision_aspect_sentiment != 0)) {
+				$f1_score_aspect_sentiment = 2/((1/$recall_aspect_sentiment) + (1/$precision_aspect_sentiment));
+			} else {
+				$f1_score_aspect_sentiment = 0;
+			}
+
+			// update info di basis data
+			$sql = "UPDATE aspect_result SET `Precision` = $precision_aspect, `Recall` = $recall_aspect, `F1Score` = $f1_score_aspect WHERE Uploadkey='$uploadKey'";
+
+			if ($conn->query($sql) != TRUE) {
 				die("Error updating record: " . $conn->error);
 			}
 
-			echo "<strong>Precision</strong>: " . $precision_aspect . "<br>";
-			echo "<strong>Recall</strong>: " . $recall_aspect . "<br>";
-			echo "<strong>F1-score</strong>: " . $f1_score_aspect;
+			echo "<strong>Precision Aspect Only</strong>: " . $precision_aspect . "<br>";
+			echo "<strong>Recall Aspect Only</strong>: " . $recall_aspect . "<br>";
+			echo "<strong>F1-score Aspect Only</strong>: " . $f1_score_aspect . "<br>";
 
+			$sql = "UPDATE aspect_sentiment_result SET `Precision` = $precision_aspect_sentiment, `Recall` = $recall_aspect_sentiment, `F1Score` = $f1_score_aspect_sentiment WHERE Uploadkey='$uploadKey'";
+
+			if ($conn->query($sql) != TRUE) {
+				die("Error updating record: " . $conn->error);
+			}
+
+			echo "<strong>Precision Aspect-Sentiment Pair</strong>: " . $precision_aspect_sentiment . "<br>";
+			echo "<strong>Recall Aspect-Sentiment Pair</strong>: " . $recall_aspect_sentiment . "<br>";
+			echo "<strong>F1-score Aspect-Sentiment Pair</strong>: " . $f1_score_aspect_sentiment;
 			echo "<br>*jika terjadi error terkait 'mysql', coba unggah sekali lagi.";
 			echo "<br><br><a href='index.php'>See Current Rankings</a><br>";
 				
 			// ------------- keperluan save submission -------------------
-			// make file name in lower case -- untuk keperluan save hasil submission di folder
-			$new_file_name = strtolower($file);
-			$final_file = str_replace(' ','-',$new_file_name);
 			$string_input = implode('\n', $content);
 			
-			// jika berhasil di pindah ke folder uploads
-			if(move_uploaded_file($file_loc, $folder.$final_file))
-			{
-			
-				// update table submission untuk simpan filename yang disubmit oleh grup
-				$sekarang = date("Y-m-d H:i:s");
-				$sql = "INSERT INTO aspect_submission_logs(UploadKey, GroupName, filename, mime, size, updated, data) VALUES 
-						('$uploadKey', '$namagrup', '$name', '$mime', '$size', '$sekarang', '$string_input')";
+			// update table submission untuk simpan filename yang disubmit oleh grup
+			$sekarang = date("Y-m-d H:i:s");
+			$sql = "INSERT INTO submission_logs(UploadKey, GroupName, filename, mime, size, updated, data) VALUES 
+					('$uploadKey', '$namagrup', '$name', '$mime', '$size', '$sekarang', '$string_input')";
 
-				if ($conn->query($sql) == TRUE) {
-					// echo "Submission saved successfully";
-				} else {
-					die("Error submiting record: " . $conn->error);
-				}
-
+			if ($conn->query($sql) == TRUE) {
+				// echo "Submission saved successfully";
+			} else {
+				die("Error submiting record: " . $conn->error);
 			}	
 			$conn->close();
         }
