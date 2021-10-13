@@ -78,7 +78,7 @@ $result_aspect_sentiment = $conn->query($sql);
 
 <br>
 Kumpulkan hasil prediksi Anda di sini: <br>
-(*upload file berekstensi csv dengan delimiter koma berisi id dan hasil prediksi -- urutan: food, ambience, service, price) <strong>tanpa header</strong>)
+(*upload file berekstensi csv berisi id dan hasil prediksi dengan urutan: food, ambience, service, price <strong>tanpa header</strong>)
 <table width="1000">
 	<form action="upload.php" method="post" enctype="multipart/form-data">
 		<tr>
