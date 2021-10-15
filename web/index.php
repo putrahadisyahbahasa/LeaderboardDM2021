@@ -83,11 +83,11 @@ Kumpulkan hasil prediksi Anda di sini: <br>
 	<form action="upload.php" method="post" enctype="multipart/form-data">
 		<tr>
 			<td width="20%">Select file</td>
-			<td width="80%"><input type="file" name="file" id="file"></td>
+			<td width="80%"><input type="file" name="file" id="file" required></td>
 		</tr>
 		<tr>
 			<td width="20%">Upload key</td>
-			<td><input type="text" name="uploadkey"></td>
+			<td><input type="text" name="uploadkey" required></td>
 		</tr>
 		<tr>
 			<td>Submit</td>

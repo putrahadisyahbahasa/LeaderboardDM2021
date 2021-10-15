@@ -4,14 +4,14 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 	if (isset($_FILES["file"])) {
-		//if there was an error uploading the file
+		// if there was an error uploading the file
 		if ($_FILES["file"]["error"] > 0) {
 			echo "Return Code: " . $_FILES["file"]["error"] . "<br />";
 		} else {
-			// get uploadKey
+			// Get uploadKey
 			$uploadKey = $_POST["uploadkey"];
 			
-			// db definition
+			// DB definition
 			$host = 'kfgk8u2ogtoylkq9.cbetxkdyhwsb.us-east-1.rds.amazonaws.com';
 			$username = 'n0ww3uyqs0rp7f3z';
 			$password = 'khb8zr794pyztrw2';
@@ -237,9 +237,7 @@ if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 			$sql = "INSERT INTO submission_logs(UploadKey, GroupName, filename, mime, size, updated, data) VALUES 
 					('$uploadKey', '$namagrup', '$name', '$mime', '$size', '$sekarang', '$string_input')";
 
-			if ($conn->query($sql) == TRUE) {
-				// echo "Submission saved successfully";
-			} else {
+			if ($conn->query($sql) != TRUE) {
 				die("Error submiting record: " . $conn->error);
 			}	
 			$conn->close();
