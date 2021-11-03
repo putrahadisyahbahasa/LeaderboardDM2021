@@ -24,7 +24,7 @@ $result_aspect_sentiment = $conn->query($sql);
 <center>
 <h2>Tugas Kelompok 1 Penambangan Data</h2>
 <h3>Aspect-Based Restaurant Review Sentiment Analysis</h3>
-<p>Submission dibuka sampai Minggu, 7 November 2021, pukul 22.00 WIB</p>
+<p>Submission dibuka sampai Jumat, 12 November 2021, pukul 22.00 WIB</p>
 <hr>
 <h4>Aspect Only</h4>
 <table width="1000">

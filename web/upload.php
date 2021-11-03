@@ -61,12 +61,30 @@ if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 					array_push($y_pred_service, $line[3]);
 					array_push($y_pred_price, $line[4]);
 					
-					$pair_food = "FOOD" . $line[1];
-					$pair_ambience = "AMBIENCE" . $line[2];
-					$pair_service = "SERVICE" . $line[3];
-					$pair_price = "PRICE" . $line[4];
-					array_push($y_pred_pairs, array($pair_food, $pair_ambience, $pair_service, $pair_price));
+					$temp_array = array();
+					if ($line[1] != '-') {
+						$pair_food = "FOOD" . $line[1];
+						array_push($temp_array, $pair_food);
+					}
+					
+					if ($line[2] != '-') {
+						$pair_ambience = "AMBIENCE" . $line[2];
+						array_push($temp_array, $pair_ambience);	
+					}
+
+					if ($line[3] != '-') {
+						$pair_service = "SERVICE" . $line[3];
+						array_push($temp_array, $pair_service);	
+					}
+
+					if ($line[4] != '-') {
+						$pair_price = "PRICE" . $line[4];
+						array_push($temp_array, $pair_price);	
+					}
+
+					array_push($y_pred_pairs, $temp_array);
 				}
+				
 				$gabungan[$i] = $line[0] . "," . $line[1] . "," . $line[2] . "," . $line[3] . "," . $line[4];
 				array_push($content, $gabungan[$i]);
 				$i++;
@@ -88,11 +106,28 @@ if (isset($_POST["submit"]) and isset($_POST["uploadkey"])) {
 				$y_gold_service[$i] = $line[3];
 				$y_gold_price[$i] = $line[4];
 
-				$pair_food = "FOOD" . $line[1];
-				$pair_ambience = "AMBIENCE" . $line[2];
-				$pair_service = "SERVICE" . $line[3];
-				$pair_price = "PRICE" . $line[4];
-				array_push($y_gold_pairs, array($pair_food, $pair_ambience, $pair_service, $pair_price));
+				$temp_array = array();
+				if ($line[1] != '-') {
+					$pair_food = "FOOD" . $line[1];
+					array_push($temp_array, $pair_food);
+				}
+				
+				if ($line[2] != '-') {
+					$pair_ambience = "AMBIENCE" . $line[2];
+					array_push($temp_array, $pair_ambience);
+				}
+
+				if ($line[3] != '-') {
+					$pair_service = "SERVICE" . $line[3];
+					array_push($temp_array, $pair_service);	
+				}
+
+				if ($line[4] != '-') {
+					$pair_price = "PRICE" . $line[4];
+					array_push($temp_array, $pair_price);	
+				}
+
+				array_push($y_gold_pairs, $temp_array);
 				$i++;
 			}
 			fclose($fp);
